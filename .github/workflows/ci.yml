@@ -1,36 +1,44 @@
-name: Flask CI
+name: Flask CI/CD
 
 on:
   push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 jobs:
-  test:
+  build-scan-push:
     runs-on: ubuntu-latest
 
-    steps:
-      - uses: actions/checkout@v4
+    permissions:
+      contents: read
+      packages: write
 
-      - uses: actions/setup-python@v5
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
       - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+        run: pip install -r requirements.txt
 
       - name: Run tests
         run: pytest
 
       - name: Build Docker image
-        run: docker build -t flask-cicd-pipeline .
+        run: docker build -t ghcr.io/syzquierdo/flask-cicd-pipeline:latest .
 
-            - name: Scan Docker image with Trivy
+      - name: Scan Docker image with Trivy
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: flask-cicd-pipeline
+          image-ref: ghcr.io/syzquierdo/flask-cicd-pipeline:latest
           format: table
           exit-code: 0
+
+      - name: Login to GitHub Container Registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u syzquierdo --password-stdin
+
+      - name: Push Docker image
+        run: docker push ghcr.io/syzquierdo/flask-cicd-pipeline:latest
