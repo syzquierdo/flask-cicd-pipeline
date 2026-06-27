@@ -86,3 +86,4 @@ http://localhost:5000
 - Add linting with Flake8
 - Deploy using Docker Compose
 - Add infrastructure with Terraform
+ 
